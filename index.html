@@ -380,7 +380,7 @@ textarea::placeholder {
         btn.disabled = true;
 
         try {
-            const res = await fetch("http://localhost:3000/evaluate", {
+            const res = await fetch("/evaluate", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ taskPrompt: promptText, essay: essayText })
