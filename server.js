@@ -68,7 +68,7 @@ app.post("/evaluate", async (req, res) => {
       return res.status(400).json({ error: "Essay is empty." });
     }
 
-    // 🤖 AI request asking for JSON format
+    //  AI request asking for JSON format
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: buildPrompt(taskPrompt, essay),
@@ -85,12 +85,14 @@ app.post("/evaluate", async (req, res) => {
 
     const evaluation = JSON.parse(rawText);
 
-    // ✅ success
+    //  success
     return res.json(evaluation);
-  } catch (error) {
+} catch (error) {
     console.error("AI ERROR:", error);
-    return res.status(500).json({ error: "Server error occurred." });
-  }
+    return res.status(500).json({ 
+      error: "Oops! The AI is a bit overwhelmed right now. Take a quick breather and try again in a few seconds!" 
+    });
+}
 });
 
 const PORT = process.env.PORT || 3000;
@@ -122,5 +124,5 @@ app.get('/', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 IELTS Checker running on port ${PORT}`);
+  console.log(` IELTS Assess running on port ${PORT}`);
 });

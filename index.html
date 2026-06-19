@@ -368,6 +368,7 @@ textarea::placeholder {
         const promptText = document.getElementById('promptInput').value.trim();
         const essayText = document.getElementById('essayInput').value.trim();
         const btn = document.getElementById('evalBtn');
+        if (btn.disabled) return;
         const modal = document.getElementById('modalOverlay');
         const resultsContent = document.getElementById('resultsContent');
 
@@ -429,13 +430,19 @@ textarea::placeholder {
             // Показываем модалку с блюром
             modal.classList.add('active');
 
-        } catch (err) {
-            console.error(err);
-            alert("Error connecting to AI Server. Is the backend running?");
-        } finally {
-            btn.innerText = "Evaluate Essay";
-            btn.disabled = false;
-        }
+} catch (err) {
+    console.error(err);
+    
+
+    const errorMessage = err.message || "Oops! Too many requests, wait for some time..";
+    
+
+    alert(errorMessage); 
+    
+} finally {
+    btn.innerText = "Evaluate Essay";
+    btn.disabled = false;
+}
     }
 
     // Закрытие по клику вне карточки (по блюр-фону)
