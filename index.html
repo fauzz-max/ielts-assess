@@ -477,7 +477,7 @@
         // Конструируем сообщение для бэкенда (как в твоем старом коде)
         const fullMessage = `Topic: ${topic}\n\nEssay: ${essay}`;
         
-        const response = await fetch("/chat", {
+        const response = await fetch("/evaluate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ message: fullMessage })
