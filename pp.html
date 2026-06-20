@@ -33,7 +33,6 @@
       align-items: center;
     }
 
-    /* === Шапка сайта (Всегда на месте, ничего не прыгает) === */
     header {
       width: 100%;
       max-width: 1000px;
@@ -52,7 +51,6 @@
       letter-spacing: -0.5px;
     }
 
-    /* === Красивый Pill Toggle === */
     .toggle-container {
       position: relative;
       display: flex;
@@ -111,7 +109,6 @@
       flex: 1;
     }
 
-    /* === Анимация переключения === */
     .view-section {
       display: none;
       animation: fadeIn 0.4s ease-in-out;
@@ -121,7 +118,7 @@
     }
 
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(8px); }
+      from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
     }
 
@@ -148,7 +145,6 @@
       font-size: 14px;
     }
 
-    /* === Сетка маленьких карточек === */
     .cards-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -159,44 +155,32 @@
       background: var(--card-bg);
       border: 1px solid var(--border);
       border-radius: 16px;
-      padding: 20px;
+      padding: 24px 20px;
       cursor: pointer;
       transition: all 0.3s ease;
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      justify-content: space-between;
-      min-height: 130px;
+      gap: 12px;
     }
 
     .test-card:hover {
       transform: translateY(-4px);
       border-color: var(--primary);
-      box-shadow: 0 12px 24px rgba(7, 127, 255, 0.08);
+      box-shadow: 0 12px 24px rgba(7, 127, 255, 0.1);
     }
 
     .card-tag {
-      font-size: 11px;
-      color: var(--primary);
-      background: rgba(7, 127, 255, 0.08);
-      padding: 4px 8px;
-      border-radius: 6px;
-      width: fit-content;
+      font-size: 12px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
       font-weight: 700;
-      letter-spacing: 0.3px;
     }
 
     .card-title {
-      font-size: 14px;
-      font-weight: 500;
+      font-size: 16px;
+      font-weight: 600;
       line-height: 1.4;
-      color: var(--text-main);
-      /* Обрезка длинного текста */
-      display: -webkit-box;
-      -webkit-line-clamp: 3;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-      text-overflow: ellipsis;
     }
 
     .back-btn {
@@ -226,7 +210,7 @@
       font-weight: 600;
     }
 
-    /* === Поля ввода (Инпуты) === */
+    /* === Стили для инпутов (Одинаковые для обоих режимов) === */
     .input-group { margin-bottom: 24px; }
     .input-group label {
       display: block;
@@ -250,10 +234,10 @@
     }
     textarea:focus { border-color: var(--primary); }
     
+    /* Специфичные стили для полей "только для чтения" */
     textarea[readonly] {
-      background-color: #F8FAFC;
-      color: var(--text-muted);
-      cursor: not-allowed;
+      background-color: var(--card-bg);
+      cursor: default;
       resize: none;
     }
     textarea[readonly]:focus {
@@ -274,22 +258,6 @@
       margin-top: 10px;
     }
     .eval-btn:hover { background: var(--primary-hover); }
-    .eval-btn:disabled {
-      background: var(--text-muted);
-      cursor: not-allowed;
-    }
-
-    /* Результаты оценивания ИИ */
-    .result-container {
-      margin-top: 30px;
-      padding: 24px;
-      background: #fff;
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      display: none;
-      animation: fadeIn 0.4s ease;
-    }
-    .result-container h3 { margin-bottom: 12px; font-size: 20px; }
 
     @media (max-width: 768px) {
       .cards-grid { grid-template-columns: repeat(2, 1fr); }
@@ -318,15 +286,18 @@
   </header>
 
   <main>
+    <!-- Вкладка: Recent Tests -->
     <section id="view-recent" class="view-section active">
       <div class="section-header">
         <h2>Recent Tests</h2>
         <span class="month-badge">May, 2026</span>
       </div>
       <div class="cards-grid" id="cardsContainer">
-        </div>
+        <!-- Карточки генерируются через JS -->
+      </div>
     </section>
 
+    <!-- Детальный просмотр выбранного теста (Теперь полностью повторяет структуру Evaluate) -->
     <section id="view-detail" class="view-section">
       <button class="back-btn" onclick="goBackToRecent()">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
@@ -340,18 +311,12 @@
 
       <div class="input-group">
         <label>Your Essay</label>
-        <textarea id="detailAnswer" rows="10" placeholder="Type or paste your essay for this selected topic here..." oninput="updateDetailWordCount()"></textarea>
+        <textarea id="detailAnswer" rows="10" readonly></textarea>
         <div class="word-count-badge" id="detailWordCount">0 words</div>
-      </div>
-      
-      <button class="eval-btn" id="detailEvalBtn" onclick="submitDetailEvaluation()">Evaluate Essay</button>
-      
-      <div class="result-container" id="detailResultBox">
-        <h3>AI Feedback</h3>
-        <p id="detailResultText"></p>
       </div>
     </section>
 
+    <!-- Вкладка: Evaluate My Essay -->
     <section id="view-evaluate" class="view-section">
       <div class="input-group">
         <label>Task Prompt / Topic</label>
@@ -363,61 +328,43 @@
         <div class="word-count-badge" id="evalWordCountCounter">0 words</div>
       </div>
       <button class="eval-btn" id="evalBtn" onclick="submitEvaluation()">Evaluate Essay</button>
-      
-      <div class="result-container" id="evalResultBox">
-        <h3>AI Feedback</h3>
-        <p id="evalResultText"></p>
-      </div>
     </section>
   </main>
 
   <script>
-    // === База данных адаптированных топиков MAY 2026 ===
+    // === База данных тестов (Пустые шаблоны для Task 2) ===
     const recentTests = [
-      { tag: "Task 2 • Agree/Disagree", prompt: "Some people think that the government should spend money on children to take part in sport and art classes in schools, while others think they should spend on professional sports events and public art performances. To what extent do you agree or disagree?" },
-      { tag: "Task 2 • Discuss Both Views", prompt: "Scientists agree that people are damaging their health by eating too much junk food. Some people think that the answer to this problem is to educate people. Others think education will not work. Discuss both views and give your own opinion." },
-      { tag: "Task 2 • Agree/Disagree", prompt: "Some people believe that scientific research done today is a waste of time and money. To what extent do you agree or disagree?" },
-      { tag: "Task 2 • Direct Question", prompt: "In today's world of advanced science and technology, we still greatly value our artists such as musicians, painters and writers. What can arts tell us about life that science and technology cannot?" },
-      { tag: "Task 2 • Agree/Disagree", prompt: "The older generations tend to have very traditional ideas about how people should live, think and behave. However, some people believe that these ideas are not helpful in preparing younger generations for modern life. To what extent do you agree or disagree with this view?" },
-      { tag: "Task 2 • Causes & Solutions", prompt: "Scientists tell us some activities are good for health and others are bad. Despite knowing that, millions of people continue doing unhealthy activities. What are the causes and what are the solutions?" },
-      { tag: "Task 2 • Discuss Both Views", prompt: "Some people believe that studying at university or college is the best route to a successful career, while others believe that it is better to get a job straight after school. Discuss both views and give your opinion." },
-      { tag: "Task 2 • Positive/Negative", prompt: "More and more people today are spending large amounts of money on their appearance in order to look younger. Why do people want to look younger? Do you think this is a positive or negative development?" }
+      { tag: "Task 2", title: "Some people think that the government should spend money.. , while other think.. ", prompt: "Prompt for Test 1 will go here...", answer: "Sample answer for Test 1 will go here..." },
+      { tag: "Task 2", title: "Test 2", prompt: "Prompt for Test 2 will go here...", answer: "Sample answer for Test 2 will go here..." },
+      { tag: "Task 2", title: "Test 3", prompt: "Prompt for Test 3 will go here...", answer: "Sample answer for Test 3 will go here..." },
+      { tag: "Task 2", title: "Test 4", prompt: "Prompt for Test 4 will go here...", answer: "Sample answer for Test 4 will go here..." },
+      { tag: "Task 2", title: "Test 5", prompt: "Prompt for Test 5 will go here...", answer: "Sample answer for Test 5 will go here..." },
+      { tag: "Task 2", title: "Test 6", prompt: "Prompt for Test 6 will go here...", answer: "Sample answer for Test 6 will go here..." },
+      { tag: "Task 2", title: "Test 7", prompt: "Prompt for Test 7 will go here...", answer: "Sample answer for Test 7 will go here..." },
+      { tag: "Task 2", title: "Test 8", prompt: "Prompt for Test 8 will go here...", answer: "Sample answer for Test 8 will go here..." }
     ];
 
-    // === Генерация карточек ===
+    // === Отрисовка карточек при загрузке ===
     const container = document.getElementById('cardsContainer');
     recentTests.forEach((test, index) => {
       const card = document.createElement('div');
       card.className = 'test-card';
-      
-      // Автоматическое аккуратное сокращение вопроса для маленькой карточки
-      let shortPrompt = test.prompt;
-      if(shortPrompt.length > 75) {
-        shortPrompt = shortPrompt.substring(0, 72) + "...";
-      }
-
       card.innerHTML = `
         <span class="card-tag">${test.tag}</span>
-        <h3 class="card-title">${shortPrompt}</h3>
+        <h3 class="card-title">${test.title}</h3>
       `;
       card.onclick = () => openTestDetail(index);
       container.appendChild(card);
     });
 
-    // === Живые счетчики слов ===
+    // === Динамический счетчик слов для окна Evaluate ===
     function updateEvalWordCount() {
       const text = document.getElementById('evalEssay').value.trim();
       const words = text ? text.split(/\s+/).length : 0; 
       document.getElementById('evalWordCountCounter').innerText = `${words} words`;
     }
 
-    function updateDetailWordCount() {
-      const text = document.getElementById('detailAnswer').value.trim();
-      const words = text ? text.split(/\s+/).length : 0; 
-      document.getElementById('detailWordCount').innerText = `${words} words`;
-    }
-
-    // === Плавное переключение вкладок ===
+    // === Логика переключения вкладок ===
     function switchTab(tabName) {
       const btnRecent = document.getElementById('btnRecent');
       const btnEvaluate = document.getElementById('btnEvaluate');
@@ -441,16 +388,16 @@
       document.getElementById(sectionId).classList.add('active');
     }
 
-    // === Открытие конкретного топика ===
+    // === Логика детальной страницы теста ===
     function openTestDetail(index) {
       const test = recentTests[index];
       
-      // Закидываем тему в заблокированное поле
+      // Наполняем текстовые поля через .value вместо .innerText
       document.getElementById('detailTopic').value = test.prompt;
-      // Очищаем старые вводы и результаты
-      document.getElementById('detailAnswer').value = "";
-      document.getElementById('detailResultBox').style.display = "none";
-      updateDetailWordCount();
+      document.getElementById('detailAnswer').value = test.answer;
+      
+      const words = test.answer.trim() ? test.answer.trim().split(/\s+/).length : 0;
+      document.getElementById('detailWordCount').innerText = `${words} words`;
 
       showSection('view-detail');
     }
@@ -459,63 +406,25 @@
       showSection('view-recent');
     }
 
-    // === Функция отправки запроса на бэкенд ===
-    async function sendToAIServer(topic, essay, btnElement, resultBoxId, resultTextId) {
-      if(!topic.trim() || !essay.trim()) {
-        alert("Please make sure both fields are filled out!");
-        return;
-      }
-
-      btnElement.innerText = "Evaluating...";
-      btnElement.disabled = true;
-
-      const resBox = document.getElementById(resultBoxId);
-      const resText = document.getElementById(resultTextId);
-      resBox.style.display = "none";
-
-      try {
-        // Конструируем сообщение для бэкенда (как в твоем старом коде)
-        const fullMessage = `Topic: ${topic}\n\nEssay: ${essay}`;
-        
-        const response = await fetch("/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: fullMessage })
-        });
-
-        if (!response.ok) {
-          throw new Error("Oops! Too many requests, wait for some time..");
-        }
-
-        const data = await response.json();
-        
-        resText.innerText = data.reply || "Something went wrong. Please try again.";
-        resBox.style.display = "block";
-
-      } catch (err) {
-        console.error(err);
-        alert(err.message || "Oops! Too many requests, wait for some time..");
-      } finally {
-        btnElement.innerText = "Evaluate Essay";
-        btnElement.disabled = false;
-      }
-    }
-
-    // === Обработчики кнопок ===
-    function submitDetailEvaluation() {
-      const topic = document.getElementById('detailTopic').value;
-      const essay = document.getElementById('detailAnswer').value;
-      const btn = document.getElementById('detailEvalBtn');
-      
-      sendToAIServer(topic, essay, btn, 'detailResultBox', 'detailResultText');
-    }
-
-    function submitEvaluation() {
+    // === Отправка эссе на оценку ===
+    async function submitEvaluation() {
       const topic = document.getElementById('evalTopic').value;
       const essay = document.getElementById('evalEssay').value;
-      const btn = document.getElementById('evalBtn');
       
-      sendToAIServer(topic, essay, btn, 'evalResultBox', 'evalResultText');
+      if(!topic || !essay) {
+        alert("Please fill in both the topic and the essay!");
+        return;
+      }
+      
+      const btn = document.getElementById('evalBtn');
+      btn.innerText = "Evaluating...";
+      btn.disabled = true;
+
+      setTimeout(() => {
+        btn.innerText = "Evaluate Essay";
+        btn.disabled = false;
+        alert("Успешно! Добавь сюда свой код для отображения ответа Gemini.");
+      }, 1000);
     }
   </script>
 </body>
