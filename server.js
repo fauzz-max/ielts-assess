@@ -105,22 +105,16 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// 1. Указываем Express отдавать статические файлы (CSS, JS, index.html)
+// Указываем Express отдавать статические файлы (CSS, JS, index.html)
 app.use(express.static(__dirname));
 
-// 2. Указываем отдавать index.html при обращении к корню
+// Указываем отдавать index.html при обращении к корню
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-app.use(express.static(__dirname)); // Говорим серверу отдавать все файлы из текущей папки
-
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
+// === ВСЕ ДУБЛИКАТЫ ОТСЮДА МЫ СТЕРЛИ ===
 
 app.listen(PORT, () => {
-  console.log(` IELTS Assess running on port ${PORT}`);
+  console.log(`IELTS Assess running on port ${PORT}`);
 });
