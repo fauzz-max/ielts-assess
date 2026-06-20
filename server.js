@@ -113,7 +113,6 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 app.use(express.static(__dirname)); // Говорим серверу отдавать все файлы из текущей папки
