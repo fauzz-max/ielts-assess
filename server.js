@@ -41,13 +41,13 @@ RULES:
 
 Format strictly to this JSON structure:
 {
-  "overallScore": 7.0,
+  "overallScore": 0.0,
   "summary": "A balanced summary of the essay's performance.",
   "criteria": [
-    { "name": "Task Response", "score": 7.0, "feedback": "Detailed feedback based on IELTS criteria." },
-    { "name": "Cohesion and Coherence", "score": 7.0, "feedback": "Detailed feedback based on IELTS criteria." },
-    { "name": "Lexical Resource", "score": 7.0, "feedback": "Detailed feedback based on IELTS criteria." },
-    { "name": "Grammatical Range and Accuracy", "score": 7.0, "feedback": "Detailed feedback based on IELTS criteria." }
+    { "name": "Task Response", "score": 0.0, "feedback": "Detailed feedback based on IELTS criteria." },
+    { "name": "Cohesion and Coherence", "score": 0.0, "feedback": "Detailed feedback based on IELTS criteria." },
+    { "name": "Lexical Resource", "score": 0.0, "feedback": "Detailed feedback based on IELTS criteria." },
+    { "name": "Grammatical Range and Accuracy", "score": 0.0, "feedback": "Detailed feedback based on IELTS criteria." }
   ],
   "improvements": ["Specific improvement 1", "Specific improvement 2"]
 }
