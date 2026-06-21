@@ -31,6 +31,14 @@ function extractText(response) {
 // 🧠 main prompt (strict and precise)
 function buildPrompt(taskPrompt, essay) {
   return `
+  You are a strict, highly experienced IELTS examiner. 
+    Evaluate the following IELTS Task 2 essay based on the official Band Descriptors.
+
+    CRITICAL RULES:
+    1. Do not default to Band 7.0. Use the full 0-9.0 range. Be brutally honest. If it's a 5.5, give a 5.5. If it's a 9.0, give a 9.0.
+    2. The 'overallScore' MUST be the exact mathematical average of the 4 criteria, rounded to the nearest 0.5.
+    3. Be highly critical of grammar errors, repetitive vocabulary, and poor task response.
+
 You are an experienced IELTS examiner. Your goal is to evaluate the essay objectively based on the official IELTS Public Band Descriptors.
 
 RULES:
@@ -68,14 +76,35 @@ app.post("/evaluate", async (req, res) => {
       return res.status(400).json({ error: "Essay is empty." });
     }
 
-    //  AI request asking for JSON format
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: buildPrompt(taskPrompt, essay),
-      config: {
-        responseMimeType: "application/json"
+// 1. Определяем схему (чтобы модель знала формат и не подглядывала в примеры с 7.0)
+const responseSchema = {
+  type: "OBJECT",
+  properties: {
+    summary: { type: "STRING" },
+    criteria: {
+      type: "OBJECT",
+      properties: {
+        task_response: { type: "OBJECT", properties: { score: { type: "NUMBER" }, reasoning: { type: "STRING" } } },
+        coherence_cohesion: { type: "OBJECT", properties: { score: { type: "NUMBER" }, reasoning: { type: "STRING" } } },
+        lexical_resource: { type: "OBJECT", properties: { score: { type: "NUMBER" }, reasoning: { type: "STRING" } } },
+        grammatical_range: { type: "OBJECT", properties: { score: { type: "NUMBER" }, reasoning: { type: "STRING" } } }
       }
-    });
+    },
+    overallScore: { type: "NUMBER" },
+    improvements: { type: "ARRAY", items: { type: "STRING" } }
+  }
+};
+
+// 2. Делаем запрос
+const response = await ai.models.generateContent({
+  model: "gemini-1.5-flash", // Проверь версию, gemini-2.5 еще официально нет (может глючить)
+  contents: buildPrompt(taskPrompt, essay),
+  config: {
+    responseMimeType: "application/json",
+    responseSchema: responseSchema, // Это лучший способ заставить модель следовать формату
+    temperature: 0.1 // Снижаем творчество до минимума для строгой оценки
+  }
+});
 
     const rawText = extractText(response);
     
