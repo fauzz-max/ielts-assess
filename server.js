@@ -75,7 +75,7 @@ app.post("/evaluate", async (req, res) => {
 
     // Запрос к модели
     const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash", // Рекомендую использовать 2.0-flash, так как она актуальнее
+      model: "gemini-1.5-flash", 
       contents: buildPrompt(taskPrompt, essay),
       config: {
         responseMimeType: "application/json",
