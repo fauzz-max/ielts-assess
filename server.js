@@ -22,16 +22,27 @@ const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
 });
 
-// 🧠 Обновленный промпт (без противоречий)
-function buildPrompt(taskPrompt, essay) {
+function buildPrompt(taskPrompt, essay, wordCount) {
   return `
-You are a highly experienced and strict IELTS examiner. 
-Evaluate the following IELTS Task 2 essay based on the official IELTS Public Band Descriptors.
+You are a highly experienced, uncompromising, and strict IELTS examiner. 
+Evaluate the following IELTS Task 2 essay based strictly on the official IELTS Public Band Descriptors.
 
 CRITICAL RULES:
-1. Do not default to Band 7.0. Use the full 0-9.0 range. If it's a 5.5, give a 5.5.
-2. The 'overallScore' MUST be the exact mathematical average of the 4 criteria, rounded to the nearest 0.5.
-3. Your feedback should clearly state why the essay received a specific score based on the four criteria. Point out specific grammatical or lexical errors.
+1. STRICT GRADING: Be highly critical. Look for reasons to deduct points. Do not inflate scores. Band 5.0 to 6.0 is the standard for average, flawed essays. 
+2. WORD COUNT: The exact word count of this essay is ${wordCount}. If ${wordCount} is less than 250 words, the essay fails to fully develop the topic. In this case, the 'Task Response' score MUST NOT exceed 5.5.
+3. REASONING FIRST: In your reasoning for each criterion, explicitly list the exact grammatical errors, awkward phrases, or logical gaps BEFORE assigning the score. Focus on what went wrong.
+4. CALCULATION: The 'total_band' MUST be the exact mathematical average of the 4 criteria scores, rounded to the nearest 0.5 (e.g., 6.125 rounds to 6.0, 6.25 rounds to 6.5).
+
+OUTPUT FORMAT:
+You MUST return your evaluation strictly as a valid JSON object. Do not include any markdown formatting like \`\`\`json, conversational text, or explanations outside the JSON.
+
+{
+  "task_response": { "score": 0.0, "reasoning": "..." },
+  "coherence_and_cohesion": { "score": 0.0, "reasoning": "..." },
+  "lexical_resource": { "score": 0.0, "reasoning": "..." },
+  "grammatical_range_and_accuracy": { "score": 0.0, "reasoning": "..." },
+  "total_band": 0.0
+}
 
 Task Prompt:
 ${taskPrompt}
