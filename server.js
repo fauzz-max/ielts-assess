@@ -24,24 +24,41 @@ const ai = new GoogleGenAI({
 
 function buildPrompt(taskPrompt, essay, wordCount) {
   return `
-You are a highly experienced, uncompromising, and strict IELTS examiner. 
-Evaluate the following IELTS Task 2 essay based strictly on the official IELTS Public Band Descriptors.
+You are an expert, strict, and certified IELTS Writing examiner. Your task is to evaluate the provided essay based strictly on the official IELTS Writing Task 2 Band Descriptors.
 
-CRITICAL RULES:
-1. STRICT GRADING: Be highly critical. Look for reasons to deduct points. Do not inflate scores. Band 5.0 to 6.0 is the standard for average, flawed essays. 
-2. WORD COUNT: The exact word count of this essay is ${wordCount}. If ${wordCount} is less than 250 words, the essay fails to fully develop the topic. In this case, the 'Task Response' score MUST NOT exceed 5.5.
-3. REASONING FIRST: In your reasoning for each criterion, explicitly list the exact grammatical errors, awkward phrases, or logical gaps BEFORE assigning the score. Focus on what went wrong.
-4. CALCULATION: The 'total_band' MUST be the exact mathematical average of the 4 criteria scores, rounded to the nearest 0.5 (e.g., 6.125 rounds to 6.0, 6.25 rounds to 6.5).
+Analyze the text deeply and honestly. Assign scores dynamically and strictly based on the text's actual merit. 
 
-OUTPUT FORMAT:
-You MUST return your evaluation strictly as a valid JSON object. Do not include any markdown formatting like \`\`\`json, conversational text, or explanations outside the JSON.
+You must respond STRICTLY in pure JSON format with the following structure. Replace the capitalized string placeholders with your actual calculated float numbers (0.0 to 9.0) and text.
 
 {
-  "task_response": { "score": 0.0, "reasoning": "..." },
-  "coherence_and_cohesion": { "score": 0.0, "reasoning": "..." },
-  "lexical_resource": { "score": 0.0, "reasoning": "..." },
-  "grammatical_range_and_accuracy": { "score": 0.0, "reasoning": "..." },
-  "total_band": 0.0
+  "overallScore": "FLOAT_NUMBER",
+  "summary": "STRING_DETAILED_SUMMARY",
+  "criteria": [
+    {
+      "name": "Task Achievement",
+      "score": "FLOAT_NUMBER",
+      "feedback": "STRING_DETAILED_ANALYSIS"
+    },
+    {
+      "name": "Coherence and Cohesion",
+      "score": "FLOAT_NUMBER",
+      "feedback": "STRING_DETAILED_ANALYSIS"
+    },
+    {
+      "name": "Lexical Resource",
+      "score": "FLOAT_NUMBER",
+      "feedback": "STRING_DETAILED_ANALYSIS"
+    },
+    {
+      "name": "Grammatical Range and Accuracy",
+      "score": "FLOAT_NUMBER",
+      "feedback": "STRING_DETAILED_ANALYSIS"
+    }
+  ],
+  "improvements": [
+    "STRING_ACTIONABLE_TIP_1",
+    "STRING_ACTIONABLE_TIP_2"
+  ]
 }
 
 Task Prompt:
