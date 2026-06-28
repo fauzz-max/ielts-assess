@@ -12,54 +12,86 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// Настройка middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "1mb" }));
 app.use(express.static(__dirname));
 
-// 🔐 Инициализация AI
+
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
 });
 
-// Промпт без встроенных JSON-строк, чтобы избежать путаницы со скобками
+if (!process.env.GEMINI_API_KEY) {
+    throw new Error("GEMINI_API_KEY is missing.");
+}
+
 function buildPrompt(taskPrompt, essay) {
 return `
-You are a certified IELTS Writing Task 2 examiner.
+You are an official IELTS Writing Task 2 examiner.
 
-Evaluate the essay STRICTLY according to the official IELTS public band descriptors.
+Evaluate the essay STRICTLY according to the official IELTS public Band Descriptors.
 
-Your evaluation must be realistic and conservative.
-Do not inflate scores.
-Do not reward ideas that are poorly developed.
-Use decimal scores in 0.5 increments only.
+Your evaluation must resemble a real IELTS examiner.
 
-Scoring Criteria:
-- Task Response
-- Coherence and Cohesion
-- Lexical Resource
-- Grammatical Range and Accuracy
+Never inflate scores.
 
-Instructions:
+Band scores may only be:
 
-• Overall summary: 80–120 words.
-• Each criterion feedback: 60–90 words.
-• Improvements: exactly 6 concise actionable tips.
-• Never explain IELTS descriptors.
-• Never repeat yourself.
-• Never include markdown.
-• Never include code blocks.
-• Return ONLY valid JSON.
+0
+0.5
+1
+1.5
+...
+8.5
+9.0
+
+Evaluate these four criteria independently:
+
+1. Task Response
+2. Coherence and Cohesion
+3. Lexical Resource
+4. Grammatical Range and Accuracy
+
+Rules:
+
+• Be strict.
+
+• Penalize unclear ideas.
+
+• Penalize weak development.
+
+• Penalize memorized language.
+
+• Reward natural academic vocabulary.
+
+• Reward grammatical accuracy.
+
+Summary:
+80-120 words.
+
+Feedback for each criterion:
+60-90 words.
+
+Improvements:
+Exactly six actionable tips.
+
+Do NOT explain IELTS criteria.
+
+Do NOT repeat yourself.
+
+Return ONLY valid JSON.
 
 Essay Prompt:
+
 ${taskPrompt}
 
 Essay:
+
 ${essay}
 `;
 }
 
-// Схема ответа — строго маленькими буквами, чтобы не ломать валидатор Google SDK
+
 const responseSchema = {
   type: "object",
   properties: {
@@ -126,60 +158,160 @@ const responseSchema = {
   ]
 };
 
+function cleanJson(text) {
+
+    return text
+        .replace(/```json/g, "")
+        .replace(/```/g, "")
+        .trim();
+
+}
+
 app.post("/evaluate", async (req, res) => {
-  try {
-    const { taskPrompt, essay } = req.body;
 
-    if (!essay || essay.trim().length === 0) {
-      return res.status(400).json({ error: "Essay is empty." });
-    }
+    try {
 
-    // Запрос к модели
-const response = await ai.models.generateContent({
+        const { taskPrompt, essay } = req.body;
 
-    model: "gemini-2.5-flash",
+        if (!essay || essay.trim().length === 0) {
+            return res.status(400).json({
+                error: "Essay is empty."
+            });
+        }
 
-    contents: buildPrompt(taskPrompt, essay),
+        if (essay.length > 6000) {
+            return res.status(400).json({
+                error: "Essay is too long."
+            });
+        }
 
-    config: {
+        let lastError = null;
 
-        temperature: 0,
+        
+        for (let attempt = 1; attempt <= 2; attempt++) {
 
-        topP: 0.8,
+            try {
 
-        responseMimeType: "application/json",
+                console.log(`Gemini attempt ${attempt}`);
 
-        responseSchema,
+                const response = await ai.models.generateContent({
 
-        maxOutputTokens: 2200
+                    model: "gemini-2.5-flash",
+
+                    contents: buildPrompt(taskPrompt, essay),
+
+                    config: {
+
+                        responseMimeType: "application/json",
+
+                        responseSchema,
+
+                        temperature: 0,
+
+                        topP: 0.8,
+
+                        maxOutputTokens: 2200,
+
+                        thinkingConfig: {
+                            thinkingBudget: 256
+                        }
+
+                    }
+
+                });
+
+               
+                const rawText =
+                    typeof response.text === "function"
+                        ? response.text()
+                        : response.text;
+
+                if (!rawText) {
+                    throw new Error("Gemini returned an empty response.");
+                }
+
+                const cleaned = cleanJson(rawText);
+
+                console.log("Response length:", cleaned.length);
+
+                let evaluation;
+
+                try {
+
+                    evaluation = JSON.parse(cleaned);
+
+                } catch (err) {
+
+                    console.error("========== INVALID JSON ==========");
+                    console.error(cleaned);
+                    console.error("==================================");
+
+                    throw new Error("Gemini returned invalid JSON.");
+
+                }
+
+                
+                if (
+                    typeof evaluation.overallScore !== "number" ||
+                    !Array.isArray(evaluation.criteria) ||
+                    !Array.isArray(evaluation.improvements)
+                ) {
+
+                    throw new Error("Invalid JSON structure.");
+
+                }
+
+                return res.json(evaluation);
+
+            } catch (err) {
+
+                lastError = err;
+
+                console.error(`Attempt ${attempt} failed`);
+
+                console.error(err.message);
+
+                
+                if (attempt < 2) {
+
+                    await new Promise(resolve =>
+                        setTimeout(resolve, 1000)
+                    );
+
+                }
+
+            }
+
+        }
+
+        throw lastError;
+
+    } catch (error) {
+
+        console.error("========== SERVER ERROR ==========");
+        console.error(error);
+        console.error(error.stack);
+        console.error("==================================");
+
+        return res.status(500).json({
+
+            success: false,
+
+            error: error.message || "Internal server error."
+
+        });
 
     }
 
 });
 
-    const rawText = response.text;
-    
-    if (!rawText) {
-       return res.status(500).json({ error: "Failed to generate evaluation." });
-    }
 
-    const evaluation = JSON.parse(rawText);
-    return res.json(evaluation);
 
-  } catch (error) {
-    console.error("AI ERROR:", error);
-    return res.status(500).json({ 
-      error: "Oops! The AI is a bit overwhelmed right now. Take a quick breather and try again!" 
-    });
-  }
-});
-
-// Роут для главной страницы
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Разделение окружения: listen только для локалки
+
 if (process.env.NODE_ENV !== 'production') {
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
@@ -187,5 +319,17 @@ if (process.env.NODE_ENV !== 'production') {
   });
 }
 
-// Экспорт для Vercel Serverless
+
+process.on("unhandledRejection", (err) => {
+    console.error("UNHANDLED REJECTION");
+    console.error(err);
+});
+
+process.on("uncaughtException", (err) => {
+    console.error("UNCAUGHT EXCEPTION");
+    console.error(err);
+});
+
+
+
 export default app;
