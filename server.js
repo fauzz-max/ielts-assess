@@ -170,8 +170,13 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-const PORT = process.env.PORT || 3000;
+// Запускаем app.listen только при локальной разработке
+if (process.env.NODE_ENV !== "production") {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`IELTS Assess running locally on port ${PORT}`);
+  });
+}
 
-app.listen(PORT, () => {
-  console.log(`IELTS Assess running on port ${PORT}`);
-});
+// Экспортируем приложение для бессерверной среды Vercel
+export default app;
