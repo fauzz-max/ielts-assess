@@ -22,50 +22,18 @@ const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
 });
 
-function buildPrompt(taskPrompt, essay, wordCount) {
+function buildPrompt(taskPrompt, essay) {
   return `
-You are an expert, strict, and certified IELTS Writing examiner. Your task is to evaluate the provided essay based strictly on the official IELTS Writing Task 2 Band Descriptors.
-
-Analyze the text deeply and honestly. Assign scores dynamically and strictly based on the text's actual merit. 
-
-You must respond STRICTLY in pure JSON format with the following structure. Replace the capitalized string placeholders with your actual calculated float numbers (0.0 to 9.0) and text.
-
+You are an IELTS examiner. Grade this essay based on IELTS criteria.
+Return ONLY a JSON object with this structure:
 {
-  "overallScore": "FLOAT_NUMBER",
-  "summary": "STRING_DETAILED_SUMMARY",
-  "criteria": [
-    {
-      "name": "Task Achievement",
-      "score": "FLOAT_NUMBER",
-      "feedback": "STRING_DETAILED_ANALYSIS"
-    },
-    {
-      "name": "Coherence and Cohesion",
-      "score": "FLOAT_NUMBER",
-      "feedback": "STRING_DETAILED_ANALYSIS"
-    },
-    {
-      "name": "Lexical Resource",
-      "score": "FLOAT_NUMBER",
-      "feedback": "STRING_DETAILED_ANALYSIS"
-    },
-    {
-      "name": "Grammatical Range and Accuracy",
-      "score": "FLOAT_NUMBER",
-      "feedback": "STRING_DETAILED_ANALYSIS"
-    }
-  ],
-  "improvements": [
-    "STRING_ACTIONABLE_TIP_1",
-    "STRING_ACTIONABLE_TIP_2"
-  ]
+  "overallScore": number,
+  "summary": "brief summary",
+  "criteria": [{"name": "Task Achievement", "score": number, "feedback": "feedback text"}, ...],
+  "improvements": ["tip 1", "tip 2"]
 }
-
-Task Prompt:
-${taskPrompt}
-
-User Essay:
-${essay}
+Essay: "${essay}"
+Task: "${taskPrompt}"
 `;
 }
 
@@ -110,17 +78,16 @@ app.post("/evaluate", async (req, res) => {
     }
 
     // Запрос к модели
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash", 
-      contents: buildPrompt(taskPrompt, essay),
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: responseSchema,
-        temperature: 0.2, // Чуть-чуть поднимем температуру, чтобы избежать жестких зацикливаний
-        maxOutputTokens: 1500 // 2. ПРЕДОХРАНИТЕЛЬ: Жестко ограничиваем ответ ИИ
-      }
-    });
-
+const response = await ai.models.generateContent({
+  model: "gemini-2.0-flash", // Используй самую быструю модель
+  contents: buildPrompt(taskPrompt, essay),
+  config: {
+    responseMimeType: "application/json",
+    responseSchema: responseSchema,
+    temperature: 0.1, // Меньше температура = быстрее генерация
+    maxOutputTokens: 600 // Сократи лимит — этого хватит для краткого фидбека
+  }
+});
     const rawText = response.text;
     
     if (!rawText) {
