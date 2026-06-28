@@ -3,8 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
-// Импортируем GoogleGenAI и Type для корректной работы со схемами данных
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 
 dotenv.config();
 
@@ -23,40 +22,40 @@ const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
 });
 
+// Промпт очищен от дублирования JSON-структуры, чтобы ИИ не зацикливался
 function buildPrompt(taskPrompt, essay) {
-  return `
-You are an expert, strict, and certified IELTS Writing examiner. Your task is to evaluate the provided essay based strictly on the official IELTS Writing Task 2 Band Descriptors.
+  return `You are an expert, strict, and certified IELTS Writing examiner. Your task is to evaluate the provided essay based strictly on the official IELTS Writing Task 2 Band Descriptors.
 
-Analyze the text deeply and honestly. Assign scores dynamically and strictly based on the text's actual merit. 
+Analyze the text deeply and honestly. Assign scores dynamically and strictly based on the text's actual merit. Provide an overall score, a detailed summary feedback, scores and specific feedback for each of the 4 standard IELTS criteria, and a list of actionable improvements.
 
 Task Prompt:
 ${taskPrompt}
 
 User Essay:
-${essay}
-`;
+${essay}`;
 }
 
-// Исправленная схема с использованием строгого перечисления Type из SDK
+// ИСПРАВЛЕНО: Все типы переведены в нижний регистр ("object", "number", "string", "array")
 const responseSchema = {
-  type: Type.OBJECT,
+  type: "object",
   properties: {
-    overallScore: { type: Type.NUMBER },
-    summary: { type: Type.STRING },
+    overallScore: { type: "number" },
+    summary: { type: "string" },
     criteria: {
-      type: Type.ARRAY,
+      type: "array",
       items: {
-        type: Type.OBJECT,
+        type: "object",
         properties: {
-          name: { type: Type.STRING },
-          score: { type: Type.NUMBER },
-          feedback: { type: Type.STRING }
-        }
+          name: { type: "string" },
+          score: { type: "number" },
+          feedback: { type: "string" }
+        },
+        required: ["name", "score", "feedback"]
       }
     },
     improvements: { 
-      type: Type.ARRAY, 
-      items: { type: Type.STRING } 
+      type: "array", 
+      items: { type: "string" } 
     }
   },
   required: ["overallScore", "summary", "criteria", "improvements"]
@@ -77,7 +76,7 @@ app.post("/evaluate", async (req, res) => {
       config: {
         responseMimeType: "application/json",
         responseSchema: responseSchema,
-        temperature: 0.1 // Низкая температура для соблюдения формата схемы
+        temperature: 0.1 // Низкая температура для точности
       }
     });
 
@@ -93,7 +92,7 @@ app.post("/evaluate", async (req, res) => {
   } catch (error) {
     console.error("AI ERROR:", error);
     return res.status(500).json({ 
-      error: "Oops! The AI is a bit overwhelmed right now. Take a quick breather and try again in a few seconds!" 
+      error: "Oops! The AI is a bit overwhelmed right now. Take a quick breather and try again!" 
     });
   }
 });
@@ -103,13 +102,13 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Если проект запущен локально (не в production-среде Vercel), запускаем express-сервер на порту
+// ИСПРАВЛЕНО: app.listen не вызывается внутри Vercel, предотвращая баги окружения
 if (process.env.NODE_ENV !== 'production') {
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
-    console.log(`IELTS Assess running on http://localhost:${PORT}`);
+    console.log(`IELTS Assess running on port ${PORT}`);
   });
 }
 
-// Экспортируем приложение для корректного деплоя на Vercel
+// Экспорт приложения для Vercel Serverless
 export default app;
