@@ -24,41 +24,106 @@ const ai = new GoogleGenAI({
 
 // Промпт без встроенных JSON-строк, чтобы избежать путаницы со скобками
 function buildPrompt(taskPrompt, essay) {
-  return `You are an expert, strict, and certified IELTS Writing examiner. Your task is to evaluate the provided essay based strictly on the official IELTS Writing Task 2 Band Descriptors.
+return `
+You are a certified IELTS Writing Task 2 examiner.
 
-Analyze the text deeply and honestly. Assign scores dynamically and strictly based on the text's actual merit. Provide an overall score, a detailed summary feedback, scores and specific feedback for each of the 4 standard IELTS criteria, and a list of actionable improvements.
+Evaluate the essay STRICTLY according to the official IELTS public band descriptors.
 
-Task Prompt:
+Your evaluation must be realistic and conservative.
+Do not inflate scores.
+Do not reward ideas that are poorly developed.
+Use decimal scores in 0.5 increments only.
+
+Scoring Criteria:
+- Task Response
+- Coherence and Cohesion
+- Lexical Resource
+- Grammatical Range and Accuracy
+
+Instructions:
+
+• Overall summary: 80–120 words.
+• Each criterion feedback: 60–90 words.
+• Improvements: exactly 6 concise actionable tips.
+• Never explain IELTS descriptors.
+• Never repeat yourself.
+• Never include markdown.
+• Never include code blocks.
+• Return ONLY valid JSON.
+
+Essay Prompt:
 ${taskPrompt}
 
-User Essay:
-${essay}`;
+Essay:
+${essay}
+`;
 }
 
 // Схема ответа — строго маленькими буквами, чтобы не ломать валидатор Google SDK
 const responseSchema = {
   type: "object",
   properties: {
-    overallScore: { type: "number" },
-    summary: { type: "string" },
+
+    overallScore: {
+      type: "number"
+    },
+
+    summary: {
+      type: "string"
+    },
+
     criteria: {
       type: "array",
+
+      minItems: 4,
+      maxItems: 4,
+
       items: {
         type: "object",
+
         properties: {
-          name: { type: "string" },
-          score: { type: "number" },
-          feedback: { type: "string" }
+
+          name: {
+            type: "string"
+          },
+
+          score: {
+            type: "number"
+          },
+
+          feedback: {
+            type: "string"
+          }
+
         },
-        required: ["name", "score", "feedback"]
+
+        required: [
+          "name",
+          "score",
+          "feedback"
+        ]
       }
     },
-    improvements: { 
-      type: "array", 
-      items: { type: "string" } 
+
+    improvements: {
+      type: "array",
+
+      minItems: 6,
+      maxItems: 6,
+
+      items: {
+        type: "string"
+      }
     }
+
   },
-  required: ["overallScore", "summary", "criteria", "improvements"]
+
+  required: [
+    "overallScore",
+    "summary",
+    "criteria",
+    "improvements"
+  ]
 };
 
 app.post("/evaluate", async (req, res) => {
@@ -70,15 +135,27 @@ app.post("/evaluate", async (req, res) => {
     }
 
     // Запрос к модели
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash", 
-      contents: buildPrompt(taskPrompt, essay),
-      config: {
+const response = await ai.models.generateContent({
+
+    model: "gemini-2.5-flash",
+
+    contents: buildPrompt(taskPrompt, essay),
+
+    config: {
+
+        temperature: 0,
+
+        topP: 0.8,
+
         responseMimeType: "application/json",
-        responseSchema: responseSchema,
-        temperature: 0.1
-      }
-    });
+
+        responseSchema,
+
+        maxOutputTokens: 2200
+
+    }
+
+});
 
     const rawText = response.text;
     
