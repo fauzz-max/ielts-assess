@@ -101,6 +101,14 @@ app.post("/evaluate", async (req, res) => {
       return res.status(400).json({ error: "Essay is empty." });
     }
 
+    // 1. ПРЕДОХРАНИТЕЛЬ: Ограничиваем длину эссе (защита от перегрузки)
+    // 5000 символов — это примерно 700-800 слов, чего с запасом хватит для IELTS.
+    if (essay.length > 5000) {
+      return res.status(400).json({ 
+        error: "Your essay is too long. Please keep it under 800 words." 
+      });
+    }
+
     // Запрос к модели
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash", 
@@ -108,9 +116,36 @@ app.post("/evaluate", async (req, res) => {
       config: {
         responseMimeType: "application/json",
         responseSchema: responseSchema,
-        temperature: 0.1 // Низкая температура для строгости и следования формату
+        temperature: 0.2, // Чуть-чуть поднимем температуру, чтобы избежать жестких зацикливаний
+        maxOutputTokens: 1500 // 2. ПРЕДОХРАНИТЕЛЬ: Жестко ограничиваем ответ ИИ
       }
     });
+
+    const rawText = response.text;
+    
+    if (!rawText) {
+       return res.status(500).json({ error: "Failed to generate evaluation." });
+    }
+
+    // 3. ПРЕДОХРАНИТЕЛЬ: Безопасный парсинг JSON с обработкой ошибки
+    let evaluation;
+    try {
+      evaluation = JSON.parse(rawText);
+    } catch (parseError) {
+      console.error("JSON Parse Error. Raw Text snippet:", rawText.substring(0, 500));
+      return res.status(500).json({ 
+        error: "AI generated a malformed response. Please try evaluating again." 
+      });
+    }
+
+    return res.json(evaluation);
+  } catch (error) {
+    console.error("AI ERROR:", error);
+    return res.status(500).json({ 
+      error: "Oops! The AI is a bit overwhelmed right now. Take a quick breather and try again in a few seconds!" 
+    });
+  }
+});
 
     // В новом SDK текст достается гораздо проще
     const rawText = response.text;
