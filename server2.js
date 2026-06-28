@@ -3,8 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
-// Импортируем GoogleGenAI и Type для корректной работы со схемами данных
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 
 dotenv.config();
 
@@ -23,11 +22,44 @@ const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
 });
 
-function buildPrompt(taskPrompt, essay) {
+function buildPrompt(taskPrompt, essay, wordCount) {
   return `
 You are an expert, strict, and certified IELTS Writing examiner. Your task is to evaluate the provided essay based strictly on the official IELTS Writing Task 2 Band Descriptors.
 
 Analyze the text deeply and honestly. Assign scores dynamically and strictly based on the text's actual merit. 
+
+You must respond STRICTLY in pure JSON format with the following structure. Replace the capitalized string placeholders with your actual calculated float numbers (0.0 to 9.0) and text.
+
+{
+  "overallScore": "FLOAT_NUMBER",
+  "summary": "STRING_DETAILED_SUMMARY",
+  "criteria": [
+    {
+      "name": "Task Achievement",
+      "score": "FLOAT_NUMBER",
+      "feedback": "STRING_DETAILED_ANALYSIS"
+    },
+    {
+      "name": "Coherence and Cohesion",
+      "score": "FLOAT_NUMBER",
+      "feedback": "STRING_DETAILED_ANALYSIS"
+    },
+    {
+      "name": "Lexical Resource",
+      "score": "FLOAT_NUMBER",
+      "feedback": "STRING_DETAILED_ANALYSIS"
+    },
+    {
+      "name": "Grammatical Range and Accuracy",
+      "score": "FLOAT_NUMBER",
+      "feedback": "STRING_DETAILED_ANALYSIS"
+    }
+  ],
+  "improvements": [
+    "STRING_ACTIONABLE_TIP_1",
+    "STRING_ACTIONABLE_TIP_2"
+  ]
+}
 
 Task Prompt:
 ${taskPrompt}
@@ -37,29 +69,28 @@ ${essay}
 `;
 }
 
-// Исправленная схема с использованием строгого перечисления Type из SDK
+// Схема, которая ТОЧНО совпадает с тем, что нам нужно
 const responseSchema = {
-  type: Type.OBJECT,
+  type: "OBJECT",
   properties: {
-    overallScore: { type: Type.NUMBER },
-    summary: { type: Type.STRING },
+    overallScore: { type: "NUMBER" },
+    summary: { type: "STRING" },
     criteria: {
-      type: Type.ARRAY,
+      type: "ARRAY",
       items: {
-        type: Type.OBJECT,
+        type: "OBJECT",
         properties: {
-          name: { type: Type.STRING },
-          score: { type: Type.NUMBER },
-          feedback: { type: Type.STRING }
+          name: { type: "STRING" },
+          score: { type: "NUMBER" },
+          feedback: { type: "STRING" }
         }
       }
     },
     improvements: { 
-      type: Type.ARRAY, 
-      items: { type: Type.STRING } 
+      type: "ARRAY", 
+      items: { type: "STRING" } 
     }
-  },
-  required: ["overallScore", "summary", "criteria", "improvements"]
+  }
 };
 
 app.post("/evaluate", async (req, res) => {
@@ -77,10 +108,11 @@ app.post("/evaluate", async (req, res) => {
       config: {
         responseMimeType: "application/json",
         responseSchema: responseSchema,
-        temperature: 0.1 // Низкая температура для соблюдения формата схемы
+        temperature: 0.1 // Низкая температура для строгости и следования формату
       }
     });
 
+    // В новом SDK текст достается гораздо проще
     const rawText = response.text;
     
     if (!rawText) {
@@ -88,8 +120,8 @@ app.post("/evaluate", async (req, res) => {
     }
 
     const evaluation = JSON.parse(rawText);
-    return res.json(evaluation);
 
+    return res.json(evaluation);
   } catch (error) {
     console.error("AI ERROR:", error);
     return res.status(500).json({ 
@@ -103,13 +135,8 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Если проект запущен локально (не в production-среде Vercel), запускаем express-сервер на порту
-if (process.env.NODE_ENV !== 'production') {
-  const PORT = process.env.PORT || 3000;
-  app.listen(PORT, () => {
-    console.log(`IELTS Assess running on http://localhost:${PORT}`);
-  });
-}
+const PORT = process.env.PORT || 3000;
 
-// Экспортируем приложение для корректного деплоя на Vercel
-export default app;
+app.listen(PORT, () => {
+  console.log(`IELTS Assess running on port ${PORT}`);
+});
