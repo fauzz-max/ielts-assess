@@ -22,7 +22,7 @@ const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
 });
 
-// Промпт очищен от дублирования JSON-структуры, чтобы ИИ не зацикливался
+// Промпт без встроенных JSON-строк, чтобы избежать путаницы со скобками
 function buildPrompt(taskPrompt, essay) {
   return `You are an expert, strict, and certified IELTS Writing examiner. Your task is to evaluate the provided essay based strictly on the official IELTS Writing Task 2 Band Descriptors.
 
@@ -35,7 +35,7 @@ User Essay:
 ${essay}`;
 }
 
-// ИСПРАВЛЕНО: Все типы переведены в нижний регистр ("object", "number", "string", "array")
+// Схема ответа — строго маленькими буквами, чтобы не ломать валидатор Google SDK
 const responseSchema = {
   type: "object",
   properties: {
@@ -76,7 +76,7 @@ app.post("/evaluate", async (req, res) => {
       config: {
         responseMimeType: "application/json",
         responseSchema: responseSchema,
-        temperature: 0.1 // Низкая температура для точности
+        temperature: 0.1
       }
     });
 
@@ -102,7 +102,7 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// ИСПРАВЛЕНО: app.listen не вызывается внутри Vercel, предотвращая баги окружения
+// Разделение окружения: listen только для локалки
 if (process.env.NODE_ENV !== 'production') {
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
@@ -110,5 +110,5 @@ if (process.env.NODE_ENV !== 'production') {
   });
 }
 
-// Экспорт приложения для Vercel Serverless
+// Экспорт для Vercel Serverless
 export default app;
